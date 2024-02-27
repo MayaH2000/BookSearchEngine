@@ -1,5 +1,5 @@
 const express = require('express');
-const { ApolloServer } = require('@apollo/server'); // Import ApolloServer
+const { ApolloServer } = require('apollo-server-express'); // Import ApolloServer from apollo-server-express
 const path = require('path');
 const db = require('./config/connection');
 const routes = require('./routes');
@@ -21,8 +21,12 @@ const server = new ApolloServer({
   resolvers, // Pass your resolvers
 });
 
-// Apply Apollo Server middleware to Express
-server.applyMiddleware({ app });
+async function startApolloServer() {
+  await server.start();
+  server.applyMiddleware({ app });
+}
+
+startApolloServer();
 
 db.once('open', () => {
   app.listen(PORT, () => console.log(`🌍 Now listening on localhost:${PORT}`));
