@@ -6,30 +6,22 @@ const expiration = '2h';
 
 module.exports = {
   // function for our authenticated routes
-  authMiddleware: function (req, res, next) {
-    // allows token to be sent via  req.query or headers
-    let token = req.query.token || req.headers.authorization;
-
-    // ["Bearer", "<tokenvalue>"]
-    if (req.headers.authorization) {
-      token = token.split(' ').pop().trim();
-    }
+  authMiddleware: function ({ context }) { // Destructure context from the GraphQL resolver function arguments
+    // Get the authorization token from the context
+    const token = context.req.headers.authorization;
 
     if (!token) {
-      return res.status(400).json({ message: 'You have no token!' });
+      throw new Error('You have no token!');
     }
 
-    // verify token and get user data out of it
+    // Verify token and get user data out of it
     try {
-      const { data } = jwt.verify(token, secret, { maxAge: expiration });
-      req.user = data;
-    } catch {
+      const { data } = jwt.verify(token, secret);
+      context.user = data; // Attach user data to the context for later use in resolvers
+    } catch (err) {
       console.log('Invalid token');
-      return res.status(400).json({ message: 'invalid token!' });
+      throw new Error('Invalid token!');
     }
-
-    // send to next endpoint
-    next();
   },
   signToken: function ({ username, email, _id }) {
     const payload = { username, email, _id };
